@@ -29,15 +29,19 @@ def get_calendar_service():
 def get_calendar_events(service):
     """Fetches events from the primary calendar."""
     if not service:
+        print(f"ERROR: No valid Google Calendar service provided.")
         return []
     try:
         now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
         events_result = service.events().list(
-            calendarId='primary', timeMin=now,
-            maxResults=10, singleEvents=True,
+            calendarId='amit.gupta@pyxeda.ai',
+            timeMin=now,
+            maxResults=10, 
+            singleEvents=True,
             orderBy='startTime'
         ).execute()
         events = events_result.get('items', [])
+        print(f"Fetched {len(events)} events from Google Calendar.")
         return events
     except Exception as e:
         st.error(f"Error fetching calendar events: {e}")
