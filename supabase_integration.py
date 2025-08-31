@@ -53,3 +53,19 @@ def update_calendar_events_in_db(supabase, events):
     except Exception as e:
         st.error(f"Error updating calendar events in database: {e}")
         print(f"Error updating calendar events in database: {e}")
+
+@st.cache_data(ttl=600)
+def get_user_from_db(_supabase, email):
+    """Fetches user details from the 'users' table based on email."""
+    supabase=_supabase
+    if not supabase:
+        return None
+    try:
+        response = supabase.table('authorized_users').select('*').eq('email', email).execute()
+        if response.data:
+            return response.data[0]
+        return None
+    except Exception as e:
+        st.error(f"Error fetching user from database: {e}")
+        print(f"Error fetching user from database: {e}")
+        return None

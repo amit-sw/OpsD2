@@ -36,12 +36,12 @@ def get_calendar_events(service):
         events_result = service.events().list(
             calendarId='amit.gupta@pyxeda.ai',
             timeMin=now,
-            maxResults=10, 
+            maxResults=1000, 
             singleEvents=True,
             orderBy='startTime'
         ).execute()
         events = events_result.get('items', [])
-        print(f"Fetched {len(events)} events from Google Calendar.")
+        print(f"Fetched {len(events)=} events from Google Calendar.")
         return events
     except Exception as e:
         st.error(f"Error fetching calendar events: {e}")
