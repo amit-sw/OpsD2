@@ -30,6 +30,8 @@ def show_events(events):
         # Convert to DataFrame for the grid
         df = pd.DataFrame(new_list)
 
+        search_text = st.text_input("Search", key="grid_q", placeholder="Search across all columns…", label_visibility="hidden")
+
         # Configure AG Grid options
         gb = GridOptionsBuilder.from_dataframe(df)
         # Enable per-column filters, sorting, and resizing
@@ -39,6 +41,7 @@ def show_events(events):
         gb.configure_column("start", flex=1, minWidth=50)
         # Enable floating filters (client-side, per-column, live filter input boxes)
         gb.configure_grid_options(floatingFilter=True, animateRows=True)
+        gb.configure_grid_options(quickFilterText=search_text, cacheQuickFilter=True)
         # Optional: set a sensible page size
         gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=100)
         grid_options = gb.build()
@@ -71,7 +74,7 @@ def show_ui_core(user):
         if st.button("Log out"):
             st.logout()
 
-    st.title("Google Calendar Sync")
+    st.title("Club Ops Calendar Events")
 
     supabase = get_supabase_client()
 
