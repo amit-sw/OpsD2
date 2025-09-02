@@ -1,7 +1,58 @@
 import streamlit as st
+st.set_page_config(layout="wide")
 from supabase_integration import get_supabase_client, get_calendar_events_from_db, update_calendar_events_in_db, get_user_from_db
 from google_calendar import get_calendar_service, get_calendar_events
 from datetime import datetime
+import pandas as pd
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
+
+def show_events(events):
+    #if events:
+    #    st.dataframe(events)
+    #else:
+    #    st.write("No events to display.")
+    new_list=[]
+    for event in events:
+        #st.write(event)
+        if event.get("attendees") and len(event["attendees"])>0:
+            attendees = ", ".join([attendee.get("email", "N/A") for attendee in event["attendees"]])
+            new_list.append({
+                "attendees": attendees,
+                "Title": event.get("summary", "No Title"),
+                "start": event["start"].get("dateTime", event["start"].get("date", "N/A")),
+                #"end": event["end"].get("dateTime", event["end"].get("date", "N/A")),
+
+                #"created": event.get("created", "N/A"),
+                #"updated": event.get("updated", "N/A"),
+                #"id": event.get("id", "N/A"),
+            })
+    if new_list:
+        # Convert to DataFrame for the grid
+        df = pd.DataFrame(new_list)
+
+        # Configure AG Grid options
+        gb = GridOptionsBuilder.from_dataframe(df)
+        # Enable per-column filters, sorting, and resizing
+        gb.configure_default_column(filter=True, sortable=True, resizable=True, flex=1, minWidth=120)
+        gb.configure_column("attendees", flex=4, minWidth=400)
+        gb.configure_column("Title", flex=1, minWidth=100)
+        gb.configure_column("start", flex=1, minWidth=50)
+        # Enable floating filters (client-side, per-column, live filter input boxes)
+        gb.configure_grid_options(floatingFilter=True, animateRows=True)
+        # Optional: set a sensible page size
+        gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=100)
+        grid_options = gb.build()
+
+        # Render the grid (no server reruns needed for filtering)
+        AgGrid(
+            df,
+            gridOptions=grid_options,
+            update_mode=GridUpdateMode.NO_UPDATE,
+            height=400,
+            use_container_width=True,
+            allow_unsafe_jscode=False,
+            fit_columns_on_grid_load=True,
+        )
 
 def show_ui_core(user):
     name = user.get("name", "Unknown User")
@@ -24,7 +75,7 @@ def show_ui_core(user):
 
     supabase = get_supabase_client()
 
-    if st.button("Refresh from Google Calendar"):
+    if st.sidebar.button("Refresh"):
         st.session_state.refreshed_events = None
         start=datetime.now()
         calendar_service = get_calendar_service()
@@ -33,19 +84,16 @@ def show_ui_core(user):
             st.session_state.refreshed_events = refreshed_events
             end = datetime.now()
             duration = end - start
-            st.success(f"Fetched {len(refreshed_events)} events from Google Calendar in {duration}.")
+            st.sidebar.success(f"Fetched {len(refreshed_events)} in {duration}.")
 
     if 'refreshed_events' in st.session_state and st.session_state.refreshed_events is not None:
-        st.header("Fresh Events from Google Calendar")
+        #st.header("Fresh Events from Google Calendar")
         refreshed_events = st.session_state.refreshed_events
-        if refreshed_events:
-            st.dataframe(refreshed_events)
-        else:
-            st.write("No upcoming events found in Google Calendar.")
+        show_events(refreshed_events)
 
 def show_ui_admin(user):
-    st.title("Admin Panel")
-    st.write("This is the admin panel. More features coming soon!")
+    #st.title("Admin Panel")
+    #st.write("This is the admin panel. More features coming soon!")
     show_ui_core(user)
 
 def show_ui_guest(user):
@@ -56,8 +104,8 @@ def show_ui_guest(user):
     #show_ui_core(user)
 
 def show_ui_user(user):
-    st.title("User Access")
-    st.write("Welcome to the user panel. More features coming soon!")
+    #st.title("User Access")
+    #st.write("Welcome to the user panel. More features coming soon!")
     show_ui_core(user)
 
 def show_ui(user):

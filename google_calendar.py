@@ -32,11 +32,11 @@ def get_calendar_events(service):
         print(f"ERROR: No valid Google Calendar service provided.")
         return []
     try:
-        now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
+        one_month_ago = (datetime.datetime.utcnow() - datetime.timedelta(days=30)).isoformat() + 'Z'
         events_result = service.events().list(
-            calendarId='amit.gupta@pyxeda.ai',
-            timeMin=now,
-            maxResults=1000, 
+            calendarId='coordinator@pyxeda.ai',
+            timeMin=one_month_ago,
+            maxResults=3000, 
             singleEvents=True,
             orderBy='startTime'
         ).execute()
