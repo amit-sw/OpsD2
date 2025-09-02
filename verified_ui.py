@@ -5,6 +5,7 @@ from google_calendar import get_calendar_service, get_calendar_events
 from datetime import datetime
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
+from st_aggrid.shared import JsCode
 
 def show_events(events):
     #if events:
@@ -41,6 +42,27 @@ def show_events(events):
         gb.configure_column("start", flex=1, minWidth=50)
         # Enable floating filters (client-side, per-column, live filter input boxes)
         gb.configure_grid_options(floatingFilter=True, animateRows=True)
+        row_style = JsCode(
+            """
+            function(params) {
+              try {
+                var v = params.data && params.data.start;
+                if (!v) { return null; }
+                var d = new Date(v);
+                if (isNaN(d)) { return null; }
+                var now = new Date();
+                if (d < now) {
+                  return { 'backgroundColor': '#fff6f6' }; // light red for past
+                } else {
+                  return { 'backgroundColor': '#f6fff6' }; // light green for future
+                }
+              } catch (e) {
+                return null;
+              }
+            }
+            """
+        )
+        gb.configure_grid_options(getRowStyle=row_style)
         gb.configure_grid_options(quickFilterText=search_text, cacheQuickFilter=True)
         # Optional: set a sensible page size
         gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=100)
@@ -53,7 +75,7 @@ def show_events(events):
             update_mode=GridUpdateMode.NO_UPDATE,
             height=400,
             use_container_width=True,
-            allow_unsafe_jscode=False,
+            allow_unsafe_jscode=True,
             fit_columns_on_grid_load=True,
         )
 
