@@ -34,7 +34,7 @@ def get_students_from_db(supabase):
     if not supabase:
         return []
     try:
-        response = supabase.table('research_program_students').select('full_name').execute()
+        response = supabase.table('research_program_students').select('full_name, student_emails, parent_emails').execute()
         return response.data
     except Exception as e:
         # If the table doesn't exist, return an empty list
