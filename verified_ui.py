@@ -5,6 +5,11 @@ from supabase_integration import get_supabase_client, get_user_from_db
 
 from show_events import show_events_all
 
+def show_students_page():
+    """Display the Students page content"""
+    st.title("Students")
+    st.write("Student management page coming soon!")
+
 def show_ui_core(user):
     name = user.get("name", "Unknown User")
     email = user.get("email", "Unknown Email")
@@ -19,11 +24,19 @@ def show_ui_core(user):
             st.warning("Email is not verified.")
         if picture:
             st.image(picture, width=100)
+            
+        # Navigation tabs
+        st.subheader("Navigation")
+        tab = st.radio("Select Page", ["Calendar", "Students"], label_visibility="collapsed")
+        
         if st.button("Log out"):
             st.logout()
-
-    st.title("Club Ops Calendar Events")
-    show_events_all()
+    
+    if tab == "Calendar":
+        st.title("Club Ops Calendar Events")
+        show_events_all()
+    elif tab == "Students":
+        show_students_page()
 
 
 
