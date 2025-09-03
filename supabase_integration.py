@@ -1,6 +1,7 @@
 import streamlit as st
 from supabase import create_client, Client
 
+
 def get_supabase_client():
     """Creates and returns a Supabase client."""
     SUPABASE_URL = st.secrets.get("SUPABASE_URL")
@@ -19,6 +20,21 @@ def get_calendar_events_from_db(supabase):
         return []
     try:
         response = supabase.table('calendar_events').select('*').execute()
+        return response.data
+    except Exception as e:
+        # If the table doesn't exist, return an empty list
+        if "relation \"calendar_events\" does not exist" in str(e):
+            return []
+        st.error(f"Error getting calendar events from database: {e}")
+        print(f"Error getting calendar events from database: {e}")
+        return []
+
+def get_student_emails_from_db(supabase):
+    """Gets calendar events from the 'calendar_events' table in Supabase."""
+    if not supabase:
+        return []
+    try:
+        response = supabase.table('research_program_students').select('*').execute()
         return response.data
     except Exception as e:
         # If the table doesn't exist, return an empty list
