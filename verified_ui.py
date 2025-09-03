@@ -1,14 +1,64 @@
 import streamlit as st
 st.set_page_config(layout="wide")
-from supabase_integration import get_supabase_client, get_user_from_db
-
+from supabase_integration import get_supabase_client, get_user_from_db, get_students_from_db
+import pandas as pd
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
 from show_events import show_events_all
 
 def show_students_page():
     """Display the Students page content"""
     st.title("Students")
-    st.write("Student management page coming soon!")
+    
+    # Get Supabase client
+    supabase = get_supabase_client()
+    
+    if not supabase:
+        st.error("Could not connect to the database.")
+        return
+    
+    # Add refresh button
+    if st.button("Refresh Student List"):
+        st.session_state.students_refreshed = True
+    
+    # Fetch student data from database
+    students = get_students_from_db(supabase)
+    
+    if not students:
+        st.info("No students found in the database.")
+        return
+    
+    # Convert to DataFrame for display
+    df = pd.DataFrame(students)
+    
+    # Configure grid options
+    st.subheader(f"Student List ({len(students)} students)")
+    
+    search_text = st.text_input("Search", key="student_grid_search", placeholder="Search students...", label_visibility="visible")
+    
+    # Configure AG Grid options
+    gb = GridOptionsBuilder.from_dataframe(df)
+    # Enable per-column filters, sorting, and resizing
+    gb.configure_default_column(filter=True, sortable=True, resizable=True, flex=1)
+    gb.configure_column("full_name", headerName="Student Name", width=300)
+    
+    # Enable floating filters (client-side, per-column, live filter input boxes)
+    gb.configure_grid_options(floatingFilter=True, animateRows=True)
+    gb.configure_grid_options(quickFilterText=search_text, cacheQuickFilter=True)
+    
+    # Optional: set a sensible page size
+    gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=25)
+    grid_options = gb.build()
+    
+    # Render the grid
+    AgGrid(
+        df,
+        gridOptions=grid_options,
+        update_mode=GridUpdateMode.NO_UPDATE,
+        height=400,
+        use_container_width=True,
+        fit_columns_on_grid_load=True,
+    )
 
 def show_ui_core(user):
     name = user.get("name", "Unknown User")
