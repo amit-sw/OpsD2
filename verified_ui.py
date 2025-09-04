@@ -7,6 +7,7 @@ from google_calendar import get_calendar_service, get_events_for_emails
 from datetime import datetime, timezone
 
 from show_events import show_events_all
+from show_students import choose_student_show_events
 
 def find_closest_future_event(events):
     """Find the closest future event from a list of events.
@@ -245,18 +246,17 @@ def show_ui_core(user):
             
         # Navigation tabs
         st.subheader("Navigation")
-        tab = st.radio("Select Page", ["Calendar", "Students"], label_visibility="collapsed")
+        tab = st.radio("Select Page", ["Calendar", "Students","Student Events"], label_visibility="collapsed")
         
         if st.button("Log out"):
-            st.logout()
-    
+            st.logout() 
     if tab == "Calendar":
         st.title("Club Ops Calendar Events")
         show_events_all()
     elif tab == "Students":
         show_students_page()
-
-
+    elif tab == "Student Events":    
+        choose_student_show_events()
 
 def show_ui_admin(user):
     #st.title("Admin Panel")

@@ -28,10 +28,11 @@ def get_calendar_events_from_db(supabase):
         st.error(f"Error getting calendar events from database: {e}")
         print(f"Error getting calendar events from database: {e}")
         return []
-
+ 
 def get_students_from_db(supabase):
     """Gets student data from the 'research_program_students' table in Supabase."""
     if not supabase:
+        print(f"DEBUG Student Email: Supabase is NULL")
         return []
     try:
         response = supabase.table('research_program_students').select('full_name, student_emails, parent_emails').execute()
@@ -43,6 +44,21 @@ def get_students_from_db(supabase):
             return []
         st.error(f"Error fetching students from database: {e}")
         print(f"Error fetching students from database: {e}")
+        
+def get_student_emails_from_db(supabase):
+    """Gets calendar events from the 'calendar_events' table in Supabase."""
+    print(f"DEBUG Student Email: getting student emails from DB")
+    if not supabase:
+        print(f"DEBUG Student Email: Supabase is NULL")
+        return []
+    try:
+        response = supabase.table('research_program_students').select('*').execute()
+        print(f"DEBUG Student Email: Got response")
+        return response.data
+    except Exception as e:
+        print(f"DEBUG Student Email: Got Exception during response")
+        st.error(f"Error getting calendar events from database: {e}")
+        print(f"Error getting calendar events from database: {e}")
         return []
 
 def update_calendar_events_in_db(supabase, events):
