@@ -4,6 +4,7 @@ from supabase_integration import get_supabase_client, get_user_from_db
 
 
 from show_events import show_events_all
+from show_students import choose_student_show_events
 
 def show_ui_core(user):
     name = user.get("name", "Unknown User")
@@ -23,7 +24,8 @@ def show_ui_core(user):
             st.logout()
 
     st.title("Club Ops Calendar Events")
-    show_events_all()
+    #show_events_all()
+    choose_student_show_events()
 
 
 

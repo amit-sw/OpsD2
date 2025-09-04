@@ -31,15 +31,16 @@ def get_calendar_events_from_db(supabase):
 
 def get_student_emails_from_db(supabase):
     """Gets calendar events from the 'calendar_events' table in Supabase."""
+    print(f"DEBUG Student Email: getting student emails from DB")
     if not supabase:
+        print(f"DEBUG Student Email: Supabase is NULL")
         return []
     try:
         response = supabase.table('research_program_students').select('*').execute()
+        print(f"DEBUG Student Email: Got response")
         return response.data
     except Exception as e:
-        # If the table doesn't exist, return an empty list
-        if "relation \"calendar_events\" does not exist" in str(e):
-            return []
+        print(f"DEBUG Student Email: Got Exception during response")
         st.error(f"Error getting calendar events from database: {e}")
         print(f"Error getting calendar events from database: {e}")
         return []

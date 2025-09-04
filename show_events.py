@@ -8,7 +8,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 from st_aggrid.shared import JsCode
 
 
-def show_events(events):
+def show_events(events,grid_name='grid_q'):
     #if events:
     #    st.dataframe(events)
     #else:
@@ -32,7 +32,7 @@ def show_events(events):
         # Convert to DataFrame for the grid
         df = pd.DataFrame(new_list)
 
-        search_text = st.text_input("Search", key="grid_q", placeholder="Search across all columns…", label_visibility="hidden")
+        search_text = st.text_input("Search", key=grid_name, placeholder="Search across all columns…", label_visibility="hidden")
 
         # Configure AG Grid options
         gb = GridOptionsBuilder.from_dataframe(df)
@@ -81,7 +81,72 @@ def show_events(events):
             allow_unsafe_jscode=True,
             fit_columns_on_grid_load=True,
         )
-        
+
+def filtered_events(event_list, student_info):
+    """Filter events to those that match the student's/parent's email or the student's name in the title.
+
+    Args:
+        event_list (list[dict]): Each dict has keys like 'attendees' (comma-separated emails), 'Title', 'start'.
+        student_info (dict): Has keys 'full_name', 'primary_student_email', 'primary_parent_email'.
+
+    Returns:
+        list[dict]: Filtered subset of event_list.
+    """
+    if not isinstance(event_list, list) or not student_info:
+        return event_list
+
+    # Normalize student data
+    full_name = (student_info.get("full_name") or "").strip()
+    student_email = (student_info.get("primary_student_email") or "").strip().lower()
+    parent_email = (student_info.get("primary_parent_email") or "").strip().lower()
+
+    name_words = [w.lower() for w in full_name.split() if w]
+
+    filtered = []
+    for ev in event_list:
+        #print(f"\nDEBUG10: {ev=}\n{full_name=},{student_email=},{parent_email=},{name_words=}")
+        try:
+            attendees = ev.get("attendees", "")
+            attendee_emails = [a['email'].lower() for a in attendees]
+
+            title = ev.get("summary", "")
+            title_lower = title.lower()
+
+            # Rule 1: any attendee email matches student's or parent's email
+            email_match = False
+            if student_email or parent_email:
+                targets = {e for e in (student_email, parent_email) if e}
+                email_match = any(a in targets for a in attendee_emails)
+            #print(f"DEBUG11: {email_match=},{student_email=},{parent_email=},{targets=},{attendee_emails=}")
+
+            # Rule 2: every word in the student's name appears somewhere in the Title
+            name_match = False
+            if name_words:
+                name_match = all(word in title_lower for word in name_words)
+            #print(f"DEBUG12: {name_match=}, {title_lower=}, {name_words=}")
+
+            if email_match or name_match:
+                filtered.append(ev)
+        except Exception as e:
+            # If anything is malformed, just skip filtering for that row and include it only if clearly matched above
+            # (No-op here; the event won't be included unless one of the rules set a match)
+            #print(f"DEBUG51: Caught exception {e}")
+            pass
+
+    return filtered
+
+def show_events_one_student(student_info):
+    calendar_service = get_calendar_service()
+    if calendar_service:
+        refreshed_events = get_calendar_events(calendar_service)
+        #refreshed_events = refreshed_events[:5]
+        events=filtered_events(refreshed_events,student_info)
+        show_events(events,grid_name='grid_21')
+        #st.divider()
+        #show_events(refreshed_events,grid_name='grid_22')
+    else:
+        st.error("calendar service not available")
+            
 def show_events_all():
     calendar_service = get_calendar_service()
     if calendar_service:
