@@ -11,26 +11,11 @@ from show_events import show_events_all
 from show_students_ag import choose_student_show_events
 from show_students_page import show_students_page
 
-
-
-
-def show_ui_core(user):
+def show_sidebar_ui(user):
     name = user.get("name", "Unknown User")
     email = user.get("email", "Unknown Email")
     picture = user.get("picture", "")
     email_verified = user.get("email_verified", False)
-    
-    # Initialize session state for active tab if not exist
-    if 'active_tab' not in st.session_state:
-        st.session_state.active_tab = "Students"  # Make Students the default tab
-    
-    # Process URL parameters to set the active tab
-    if "tab" in st.query_params and st.query_params["tab"] in ["Calendar", "Students", "Student Events"]:
-        st.session_state.active_tab = st.query_params["tab"]
-    elif "student" in st.query_params and st.query_params["student"]:
-        # If student parameter is present but no tab, default to Students tab
-        st.session_state.active_tab = "Students"
-
     with st.sidebar:
         st.text(f"Welcome {name}\n {email}")
         if email_verified:
@@ -39,27 +24,28 @@ def show_ui_core(user):
             st.warning("Email is not verified.")
         if picture:
             st.image(picture, width=100)
-            
-        # Navigation tabs - use the session state to set the default
-        st.subheader("Navigation")
-        tab = st.radio("Select Page", ["Calendar", "Students","Student Events"], 
-                      index=["Calendar", "Students","Student Events"].index(st.session_state.active_tab),
-                      label_visibility="collapsed")
-        
-        # Update the session state when tab changes via the sidebar
-        if tab != st.session_state.active_tab:
-            st.session_state.active_tab = tab
         
         if st.button("Log out"):
             st.logout() 
-    if tab == "Calendar":
-        st.title("Club Ops Calendar Events")
-        show_events_all()
-    elif tab == "Students":
-        show_students_page()
-    elif tab == "Student Events":    
-        choose_student_show_events()
 
+def show_ui_core(user):
+    show_sidebar_ui(user)
+    
+    pages = {
+        "Students": [
+            st.Page(show_students_page, title="Students"),
+        ],
+        "Calendar": [
+            st.Page(show_events_all, title="Calendar"),
+        ],
+        "Students (Old)": [
+            st.Page(choose_student_show_events, title="Students (Old)"),
+        ],
+    }
+
+    pg = st.navigation(pages, position="top")
+    pg.run()
+    
 def show_ui_admin(user):
     #st.title("Admin Panel")
     #st.write("This is the admin panel. More features coming soon!")
