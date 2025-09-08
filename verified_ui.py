@@ -40,7 +40,7 @@ def show_ui_core(user):
             st.Page(show_events_all, title="Calendar"),
         ],
         "Search": [
-            st.Page(show_search_page, title="Search"),
+            st.Page(show_search_page, title="GMail Search"),
         ],
         "Students (Old)": [
             st.Page(choose_student_show_events, title="Students (Old)"),
