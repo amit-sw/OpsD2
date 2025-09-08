@@ -102,3 +102,20 @@ def get_user_from_db(_supabase, email):
         st.error(f"Error fetching user from database: {e}")
         print(f"Error fetching user from database: {e}")
         return None
+    
+    
+@st.cache_data(ttl=600)
+def get_token_from_db(_supabase):
+    """Fetches token details from the 'gm_tokens' table based on email."""
+    supabase=_supabase
+    if not supabase:
+        return None
+    try:
+        response = supabase.table('gm_tokens').select('*').execute()
+        if response.data:
+            return response.data[0]
+        return None
+    except Exception as e:
+        st.error(f"Error fetching user from database: {e}")
+        print(f"Error fetching user from database: {e}")
+        return None

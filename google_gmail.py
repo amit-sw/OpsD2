@@ -18,10 +18,15 @@ def get_gmail_service():
             "auth_provider_x509_cert_url": st.secrets.get("gmail_service_account_auth_provider_x509_cert_url"),
             "client_x509_cert_url": st.secrets.get("gmail_service_account_client_x509_cert_url"),
         }
+        print(f"DEBUG: {st.secrets=}")
+        print(f"DEBUG: Created creds_json {creds_json}")
         creds = service_account.Credentials.from_service_account_info(creds_json, scopes=['https://www.googleapis.com/auth/gmail.readonly'])
+        print("DEBUG: Created credentials")
         # Impersonate a user
         delegated_creds = creds.with_subject(st.secrets.get("gmail_delegated_user_email"))
+        print("DEBUG: Created delegated credentials")
         service = build('gmail', 'v1', credentials=delegated_creds)
+        print("DEBUG: Created build for credentials")
         return service
     except Exception as e:
         st.error(f"Error creating Gmail service: {e}")
