@@ -136,7 +136,8 @@ def show_student_details(student_name, students, calendar_service):
     # Extract student and parent emails
     student_emails = selected_student_data.get("student_emails", []) or []
     parent_emails = selected_student_data.get("parent_emails", []) or []
-    student_specific_emails = student_emails + parent_emails
+    #student_specific_emails = student_emails + parent_emails
+    student_specific_emails = student_emails
     
     st.write(f"Showing calendar events for the next 30 days for {student_name}.")
     
@@ -315,7 +316,8 @@ def show_students_page():
     for student in students:
         student_emails = student.get("student_emails", []) or []
         parent_emails = student.get("parent_emails", []) or []
-        all_student_emails.update(student_emails + parent_emails)
+        #ll_student_emails.update(student_emails + parent_emails)
+        all_student_emails.update(student_emails)
     
     # Get events for all emails in a single API call
     all_email_events = {}
@@ -330,7 +332,8 @@ def show_students_page():
             # Extract student and parent emails
             student_emails = student.get("student_emails", []) or []
             parent_emails = student.get("parent_emails", []) or []
-            student_specific_emails = student_emails + parent_emails
+            #student_specific_emails = student_emails + parent_emails
+            student_specific_emails = student_emails
             
             # Get events for this student
             all_student_events = []
