@@ -115,7 +115,7 @@ def gmail_search(creds: Credentials, query: str, limit: int, fetch_all: bool = F
         raise RuntimeError(f"Gmail API error: {e}")
 
 def search_ui(creds: Credentials, query_term=None) -> None:
-    search_expression = "in:inbox newer_than:7d"
+    search_expression = " in:inbox newer_than:30d"
     if query_term:
         search_expression = query_term + search_expression
     st.subheader("Mail messages for Coordinator")
@@ -144,6 +144,7 @@ def show_search_page(query_term=None) -> None:
     creds = get_saved_credentials()
     creds = refresh_if_needed(creds) if creds else None
     if creds and creds.valid:
+        query_term = st.query_params.get("q"," ")
         search_ui(creds,query_term=query_term)
         return
     else:

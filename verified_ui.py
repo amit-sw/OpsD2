@@ -11,6 +11,7 @@ from show_events import show_events_all
 from show_students_ag import choose_student_show_events
 from show_students_page import show_students_page
 from show_search_page import show_search_page
+from show_student_email_calendar import show_student_email_calendar
 
 def show_sidebar_ui(user):
     name = user.get("name", "Unknown User")
@@ -41,6 +42,7 @@ def show_ui_core(user):
         ],
         "Search": [
             st.Page(show_search_page, title="GMail Search"),
+            st.Page(show_student_email_calendar, title="Calendar And Email")
         ],
         "Students (Old)": [
             st.Page(choose_student_show_events, title="Students (Old)"),
