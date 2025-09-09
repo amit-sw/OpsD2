@@ -6,6 +6,7 @@ import json
 import urllib.parse
 import time
 
+from langchain_openai import ChatOpenAI
 
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
@@ -166,6 +167,31 @@ def fetch_metadata_and_body(service, msg_id: str) -> Dict[str, str]:
         #"threadID": msg.get("threadId", ""),
         "body": body,
     }
+    
+def get_summary(records):
+    CONTEXT_LIMIT=20000 #Number of characters to put in any message,
+    PROMPT="""
+    You are a Customer Relationship expert. Given the following communication between a student/their parents and service coordinators,
+    please summarize the current status.
+    Remember to highlight any important issues to follow up on.
+    Keep this summary really concise - no more than 3-4 bullet items.
+    """
+    current_context=" "
+    for rec in records:
+        current_length=len(current_context)
+        msg_from = rec.get("from","")
+        msg_date = rec.get("date","")
+        subject = rec.get("subject","")
+        body = rec.get("body", "")
+        
+        new_information=f"\n-------\n{msg_from=}, {msg_date=}, {subject=}, {body=} "
+        if (len(new_information)+current_length>CONTEXT_LIMIT):
+            break
+        current_context += new_information
+    llm=ChatOpenAI(model="gpt-5-mini",api_key=st.secrets['OPENAI_API_KEY'])
+    response=llm.invoke(PROMPT+current_context)
+    
+    return response.content
 
 def gmail_search(creds: Credentials, query: str, limit: int, fetch_all: bool = False) -> Tuple[List[Dict[str, str]], int]:
     try:
@@ -197,11 +223,19 @@ def search_ui(creds: Credentials, query_term=None) -> None:
             st.info("No messages found.")
             st.caption(f"Completed in {duration}")
             return
+        placeholder=st.empty()
         st.write(f"Showing {len(rows)} of ~{est} message(s).")
         if est > len(rows) and not fetch_all:
             st.info("Increase Max results or enable 'Fetch all'.")
         st.dataframe(rows, use_container_width=True)
         st.sidebar.caption(f"Last fetch took {duration}")
+        start = time.perf_counter()
+        with st.spinner("Asking LLM…", show_time=True):
+            summary=get_summary(rows)
+        elapsed = time.perf_counter() - start
+        duration = f"{elapsed*1000:.0f} ms" if elapsed < 1 else f"{elapsed:.2f} s"
+        placeholder.write(summary)
+        st.sidebar.caption(f"Summarization took {duration}")
     
 def show_search_page(query_term=None) -> None:
     creds = get_saved_credentials()

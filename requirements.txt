@@ -7,3 +7,5 @@ google-auth-oauthlib
 
 pandas 
 streamlit-aggrid
+
+langchain_openai
