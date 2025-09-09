@@ -30,7 +30,7 @@ def get_saved_credentials() -> Optional[Credentials]:
         supabase_client = get_supabase_client()
         token_db = get_token_from_db(supabase_client)
         token=token_db["token"]
-        st.success(token)
+        #st.success(token)
         with open(TOKEN_FILE, "w", encoding="utf-8") as f:
             json.dump(token,f)
     try:
