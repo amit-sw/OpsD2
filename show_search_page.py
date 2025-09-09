@@ -98,25 +98,88 @@ def fetch_metadata(service, msg_id: str) -> Dict[str, str]:
     )
     headers = {h["name"]: h.get("value", "") for h in msg.get("payload", {}).get("headers", [])}
     return {
-        "Subject": headers.get("Subject", ""),
-        "From": headers.get("From", ""),
-        "Date": headers.get("Date", ""),
-        "Snippet": msg.get("snippet", ""),
-        "Message ID": msg.get("id", ""),
-        "Thread ID": msg.get("threadId", ""),
+
+        "from": headers.get("From", ""),
+        "date": headers.get("Date", ""),
+        "subject": headers.get("Subject", ""),
+        "snippet": msg.get("snippet", ""),
+        #"messageID": msg.get("id", ""),
+        #"threadID": msg.get("threadId", ""),
+    }
+    
+import base64
+from typing import Dict, Any
+
+def fetch_metadata_and_body(service, msg_id: str) -> Dict[str, str]:
+    """
+    Fetch Gmail message headers (Subject, From, Date),
+    snippet, IDs, and body (plain text preferred, fallback to HTML).
+    """
+    msg: Dict[str, Any] = (
+        service.users()
+        .messages()
+        .get(userId="me", id=msg_id, format="full")
+        .execute()
+    )
+
+    # ---- Headers ----
+    headers = {h["name"]: h.get("value", "") for h in msg.get("payload", {}).get("headers", [])}
+
+    # ---- Body ----
+    def decode_part(part):
+        data = part.get("body", {}).get("data")
+        if data:
+            return base64.urlsafe_b64decode(data.encode("UTF-8")).decode("UTF-8")
+        return None
+
+    def walk_parts(parts):
+        text_body, html_body = None, None
+        for part in parts:
+            mime_type = part.get("mimeType", "")
+            if mime_type == "text/plain":
+                text_body = decode_part(part)
+            elif mime_type == "text/html":
+                html_body = decode_part(part)
+            if not text_body and "parts" in part:
+                nested_text, nested_html = walk_parts(part["parts"])
+                text_body = text_body or nested_text
+                html_body = html_body or nested_html
+        return text_body, html_body
+
+    payload = msg.get("payload", {})
+    body_text, body_html = None, None
+    if "parts" in payload:
+        body_text, body_html = walk_parts(payload["parts"])
+    else:
+        # single-part message
+        body_text = decode_part(payload)
+
+    body = body_text or body_html or ""
+
+    # ---- Combine ----
+    return {
+        "from": headers.get("From", ""),
+        "date": headers.get("Date", ""),
+        "subject": headers.get("Subject", ""),
+        "snippet": msg.get("snippet", ""),
+        #"messageID": msg.get("id", ""),
+        #"threadID": msg.get("threadId", ""),
+        "body": body,
     }
 
 def gmail_search(creds: Credentials, query: str, limit: int, fetch_all: bool = False) -> Tuple[List[Dict[str, str]], int]:
     try:
         svc = gmail_service(creds)
         ids, est = list_message_ids(svc, query, limit, fetch_all)
-        return ([fetch_metadata(svc, i) for i in ids], est)
+        return ([fetch_metadata_and_body(svc, i) for i in ids], est)
     except HttpError as e:
         raise RuntimeError(f"Gmail API error: {e}")
 
 def search_ui(creds: Credentials, query_term=None) -> None:
-    search_expression = " in:inbox newer_than:30d"
+    search_expression = " in:all newer_than:90d"
     if query_term:
+        words = query_term.split()
+        new_term=' OR '.join(words)
         search_expression = query_term + search_expression
     st.subheader("Mail messages for Coordinator")
     limit = st.sidebar.slider("Max results", min_value=100, max_value=1000, value=200, step=100)
@@ -124,7 +187,7 @@ def search_ui(creds: Credentials, query_term=None) -> None:
     q = st.text_input("Gmail search query", value=search_expression, label_visibility="hidden")
 
     run = st.button("Search")
-    if run:
+    if run or query_term:
         start = time.perf_counter()
         with st.spinner("Fetching results from Gmail API…", show_time=True):
             rows, est = gmail_search(creds, q, limit, fetch_all)
@@ -144,7 +207,7 @@ def show_search_page(query_term=None) -> None:
     creds = get_saved_credentials()
     creds = refresh_if_needed(creds) if creds else None
     if creds and creds.valid:
-        query_term = st.query_params.get("q"," ")
+        query_term = st.query_params.get("q")
         search_ui(creds,query_term=query_term)
         return
     else:
